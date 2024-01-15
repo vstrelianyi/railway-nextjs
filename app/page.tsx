@@ -3,8 +3,10 @@
 import Image from 'next/image'
 
 // APOLLO
-import { useQuery } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client';
 import GET_POSTS from '@/apollo/queries/POSTS/GET_POSTS';
+import CREATE_POST from '@/apollo/mutations/POSTS/CREATE_POST';
+import { useState } from 'react';
 
 type TPost={
 	databaseId: string,
@@ -18,12 +20,31 @@ interface GraphQLResponse {
 }
 
 export default function Home() {
-
+	const token = process.env.NEXT_PUBLIC_TOKEN;
 	const result = useQuery<GraphQLResponse>(GET_POSTS);
 	const { loading, error, data } = result;
-	console.log(data)
+
+	const [ input, setInput ] = useState('');
+
+	const [ createPost, ] = useMutation(
+    CREATE_POST,
+  );
 
 	const handleReloadClick = () => {
+		result.refetch();
+	}
+
+	const handleAddPostClick = async() => {
+		const newPost = await createPost(	{
+			variables: {
+				title: input
+			},
+			context: {
+				headers: {
+					Authorization: `Bearer ${ token }`,
+				},
+			},
+		} );
 		result.refetch();
 	}
 
@@ -52,8 +73,8 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="relative flex">
-				<div className="flex flex-col">
+      <div className="relative flex flex-col">
+				<div className="flex flex-col mb-[50px]">
 					<h1 className="text-[26px] mb-[20px]">Posts</h1>
 					{ loading ? (
 						<p>Loading...</p>
@@ -67,6 +88,12 @@ export default function Home() {
 							<button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded cursor-pointer" onClick={handleReloadClick}>Reload</button>
 						</>
 					) }
+				</div>
+
+				<div className="flex flex-col">
+					<h1 className="text-[26px] mb-[20px]">Add Post</h1>
+					<input type="text" className='text-black mb-[20px] rounded h-[40px] px-[10px]' value={ input } onChange={ ( e )=> setInput( e.target.value )}/>
+					<button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded cursor-pointer" onClick={handleAddPostClick}>Add</button>
 				</div>
       </div>
 
